@@ -25,23 +25,20 @@ typedef struct {
 pthread_mutex_t global_mutex = PTHREAD_MUTEX_INITIALIZER;
 DnaCounts global_counts = {0,0,0,0};
 
-double now_sec()
-{
+double now_sec() {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC,&ts);
     return ts.tv_sec + ts.tv_nsec/1e9;
 }
 
-void add_counts(DnaCounts *dst, DnaCounts *src)
-{
+void add_counts(DnaCounts *dst, DnaCounts *src) {
     dst->A += src->A;
     dst->C += src->C;
     dst->G += src->G;
     dst->T += src->T;
 }
 
-void print_counts(DnaCounts *c)
-{
+void print_counts(DnaCounts *c) {
     printf("Counts (A C G T):\n");
     printf("%llu %llu %llu %llu\n",
            (unsigned long long)c->A,
@@ -50,8 +47,7 @@ void print_counts(DnaCounts *c)
            (unsigned long long)c->T);
 }
 
-char *generate_dna(size_t n)
-{
+char *generate_dna(size_t n) {
     char *buf = malloc(n);
     const char alphabet[4] = {'A','C','G','T'};
 
@@ -61,8 +57,7 @@ char *generate_dna(size_t n)
     return buf;
 }
 
-DnaCounts count_scalar(const char *data,size_t n)
-{
+DnaCounts count_scalar(const char *data,size_t n) {
     DnaCounts c = {0};
 
     for(size_t i=0;i<n;i++)
@@ -79,8 +74,7 @@ DnaCounts count_scalar(const char *data,size_t n)
     return c;
 }
 
-void *thread_scalar(void *arg)
-{
+void *thread_scalar(void *arg) {
     ThreadData *td = (ThreadData*)arg;
 
     td->local = count_scalar(td->data + td->start,
@@ -93,8 +87,7 @@ void *thread_scalar(void *arg)
     return NULL;
 }
 
-DnaCounts count_multithreaded(const char *data,size_t n)
-{
+DnaCounts count_multithreaded(const char *data,size_t n) {
     pthread_t threads[NUM_THREADS];
     ThreadData td[NUM_THREADS];
 
@@ -117,8 +110,7 @@ DnaCounts count_multithreaded(const char *data,size_t n)
     return global_counts;
 }
 
-DnaCounts count_simd(const char *data,size_t n)
-{
+DnaCounts count_simd(const char *data,size_t n){
     DnaCounts c = {0};
     size_t i = 0;
 
@@ -156,8 +148,7 @@ DnaCounts count_simd(const char *data,size_t n)
     return c;
 }
 
-void *thread_simd(void *arg)
-{
+void *thread_simd(void *arg) {
     ThreadData *td = (ThreadData*)arg;
 
     td->local = count_simd(td->data + td->start,
@@ -170,8 +161,7 @@ void *thread_simd(void *arg)
     return NULL;
 }
 
-DnaCounts count_simd_multithreaded(const char *data,size_t n)
-{
+DnaCounts count_simd_multithreaded(const char *data,size_t n){
     pthread_t threads[NUM_THREADS];
     ThreadData td[NUM_THREADS];
 
@@ -194,8 +184,7 @@ DnaCounts count_simd_multithreaded(const char *data,size_t n)
     return global_counts;
 }
 
-int main()
-{
+int main() {
     size_t n = DNA_SIZE_MB * 1024ULL * 1024ULL;
 
     srand(time(NULL));
