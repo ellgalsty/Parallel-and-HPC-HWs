@@ -15,15 +15,13 @@ typedef struct {
     size_t end;
 } ThreadData;
 
-double now_sec()
-{
+double now_sec(){
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return ts.tv_sec + ts.tv_nsec / 1e9;
 }
 
-char *generate_buffer(size_t n)
-{
+char *generate_buffer(size_t n) {
     char *buf = malloc(n);
     const char chars[] =
         "abcdefghijklmnopqrstuvwxyz"
@@ -40,31 +38,26 @@ char *generate_buffer(size_t n)
     return buf;
 }
 
-void convert_scalar_range(char *buffer, size_t start, size_t end)
-{
-    for (size_t i = start; i < end; i++)
-    {
+void convert_scalar_range(char *buffer, size_t start, size_t end) {
+    for (size_t i = start; i < end; i++) {
         if (buffer[i] >= 'a' && buffer[i] <= 'z')
             buffer[i] = buffer[i] - 32;
     }
 }
 
-void *thread_multithread(void *arg)
-{
+void *thread_multithread(void *arg){
     ThreadData *td = (ThreadData *)arg;
     convert_scalar_range(td->buffer, td->start, td->end);
     return NULL;
 }
 
-void convert_multithreaded(char *buffer, size_t n)
-{
+void convert_multithreaded(char *buffer, size_t n) {
     pthread_t threads[NUM_THREADS];
     ThreadData td[NUM_THREADS];
 
     size_t chunk = n / NUM_THREADS;
 
-    for (int i = 0; i < NUM_THREADS; i++)
-    {
+    for (int i = 0; i < NUM_THREADS; i++) {
         td[i].buffer = buffer;
         td[i].start = i * chunk;
         td[i].end = (i == NUM_THREADS - 1) ? n : (i + 1) * chunk;
@@ -76,8 +69,7 @@ void convert_multithreaded(char *buffer, size_t n)
         pthread_join(threads[i], NULL);
 }
 
-void convert_simd(char *buffer, size_t n)
-{
+void convert_simd(char *buffer, size_t n) {
     size_t i = 0;
 
     __m256i va = _mm256_set1_epi8('a');
@@ -85,8 +77,7 @@ void convert_simd(char *buffer, size_t n)
     __m256i diff = _mm256_set1_epi8(32);
     __m256i one = _mm256_set1_epi8(1);
 
-    for (; i + 32 <= n; i += 32)
-    {
+    for (; i + 32 <= n; i += 32) {
         __m256i v = _mm256_loadu_si256((__m256i *)(buffer + i));
 
         __m256i ge_a = _mm256_cmpgt_epi8(v, _mm256_sub_epi8(va, one));
@@ -99,29 +90,25 @@ void convert_simd(char *buffer, size_t n)
         _mm256_storeu_si256((__m256i *)(buffer + i), v);
     }
 
-    for (; i < n; i++)
-    {
+    for (; i < n; i++) {
         if (buffer[i] >= 'a' && buffer[i] <= 'z')
             buffer[i] = buffer[i] - 32;
     }
 }
 
-void *thread_simd(void *arg)
-{
+void *thread_simd(void *arg) {
     ThreadData *td = (ThreadData *)arg;
     convert_simd(td->buffer + td->start, td->end - td->start);
     return NULL;
 }
 
-void convert_simd_multithreaded(char *buffer, size_t n)
-{
+void convert_simd_multithreaded(char *buffer, size_t n) {
     pthread_t threads[NUM_THREADS];
     ThreadData td[NUM_THREADS];
 
     size_t chunk = n / NUM_THREADS;
 
-    for (int i = 0; i < NUM_THREADS; i++)
-    {
+    for (int i = 0; i < NUM_THREADS; i++) {
         td[i].buffer = buffer;
         td[i].start = i * chunk;
         td[i].end = (i == NUM_THREADS - 1) ? n : (i + 1) * chunk;
@@ -133,8 +120,7 @@ void convert_simd_multithreaded(char *buffer, size_t n)
         pthread_join(threads[i], NULL);
 }
 
-int main()
-{
+int main() {
     size_t n = BUFFER_SIZE_MB * 1024ULL * 1024ULL;
 
     srand(time(NULL));
