@@ -60,10 +60,8 @@ char *generate_dna(size_t n) {
 DnaCounts count_scalar(const char *data,size_t n) {
     DnaCounts c = {0};
 
-    for(size_t i=0;i<n;i++)
-    {
-        switch(data[i])
-        {
+    for(size_t i=0;i<n;i++){
+        switch(data[i]) {
             case 'A': c.A++; break;
             case 'C': c.C++; break;
             case 'G': c.G++; break;
@@ -77,8 +75,7 @@ DnaCounts count_scalar(const char *data,size_t n) {
 void *thread_scalar(void *arg) {
     ThreadData *td = (ThreadData*)arg;
 
-    td->local = count_scalar(td->data + td->start,
-                             td->end - td->start);
+    td->local = count_scalar(td->data + td->start, td->end - td->start);
 
     pthread_mutex_lock(&global_mutex);
     add_counts(&global_counts,&td->local);
@@ -95,8 +92,7 @@ DnaCounts count_multithreaded(const char *data,size_t n) {
 
     size_t chunk = n / NUM_THREADS;
 
-    for(int i=0;i<NUM_THREADS;i++)
-    {
+    for(int i=0;i<NUM_THREADS;i++) {
         td[i].data = data;
         td[i].start = i * chunk;
         td[i].end = (i==NUM_THREADS-1) ? n : (i+1)*chunk;
@@ -119,8 +115,7 @@ DnaCounts count_simd(const char *data,size_t n){
     __m256i vG = _mm256_set1_epi8('G');
     __m256i vT = _mm256_set1_epi8('T');
 
-    for(; i + 32 <= n; i += 32)
-    {
+    for(; i + 32 <= n; i += 32) {
         __m256i v = _mm256_loadu_si256((__m256i*)(data+i));
 
         uint32_t mA = _mm256_movemask_epi8(_mm256_cmpeq_epi8(v,vA));
@@ -134,10 +129,8 @@ DnaCounts count_simd(const char *data,size_t n){
         c.T += __builtin_popcount(mT);
     }
 
-    for(; i<n; i++)
-    {
-        switch(data[i])
-        {
+    for(; i<n; i++) {
+        switch(data[i]){
             case 'A': c.A++; break;
             case 'C': c.C++; break;
             case 'G': c.G++; break;
@@ -169,8 +162,7 @@ DnaCounts count_simd_multithreaded(const char *data,size_t n){
 
     size_t chunk = n / NUM_THREADS;
 
-    for(int i=0;i<NUM_THREADS;i++)
-    {
+    for(int i=0;i<NUM_THREADS;i++) {
         td[i].data = data;
         td[i].start = i * chunk;
         td[i].end = (i==NUM_THREADS-1) ? n : (i+1)*chunk;
